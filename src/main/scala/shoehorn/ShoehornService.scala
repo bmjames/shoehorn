@@ -23,11 +23,13 @@ trait ShoehornService extends BlueEyesServiceBuilder with BijectionsChunkJson {
       request { client: ContentApi =>
         produce(application/json) {
           path("/") {
-            get { _: Req =>
+            get { req: Req =>
+
+              val ignoredTags = req.parameters.get('ignore) map (_.split(',').toSet.map(Tag.apply))
 
               for {
                 latestContent <- client.latest(50)
-                nodes = buildGraph(latestContent)
+                nodes = buildGraph(latestContent, ignoredTags.orZero)
               } yield {
                 HttpResponse[JValue](content = Some(nodes.serialize))
               }
@@ -39,10 +41,10 @@ trait ShoehornService extends BlueEyesServiceBuilder with BijectionsChunkJson {
       shutdown(_ => Future(println("Shutting down...")))
   }}
 
-  def buildGraph(contents: List[Content]): List[GraphNode] = {
+  def buildGraph(contents: List[Content], ignoredTags: Set[Tag]): List[GraphNode] = {
     val tagToContent: Map[Tag, List[Content]] = contents foldMap { content =>
       content.tags foldMap (tag => Map(tag -> List(content)))
-    }
+    } filterKeys (tag => ! ignoredTags(tag))
     contents map { content => toGraphNode(content, tagToContent) }
   }
 
