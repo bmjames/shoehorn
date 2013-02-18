@@ -7,7 +7,7 @@ import blueeyes.json.JsonAST.JField
 
 case class GraphNode(id: String, links: List[Link])
 
-case class Link(id: String, tags: List[String])
+case class Link(id: String, tags: List[String], length: Int)
 
 object GraphNode {
 
@@ -17,7 +17,8 @@ object GraphNode {
       JField("links", JArray(node.links map {
         link => JObject(List(
           JField("id", JString(link.id)),
-          JField("tags", JArray(link.tags map (JString(_: String))))
+          JField("tags", JArray(link.tags map (JString(_: String)))),
+          JField("length", JInt(link.length))
         ))
       }))
     ))
