@@ -37,7 +37,9 @@ trait ShoehornService extends BlueEyesServiceBuilder with BijectionsChunkJson {
 
                 val nodes = contents map { content =>
                   val linkedContent = content.tags foldMap { tag =>
-                    interestingTags.getOrElse(tag, Nil) foldMap { linkedContent => Map(linkedContent.id -> List(tag))}
+                    tagToContent.getOrElse(tag, Nil) filter (_.id != content.id) foldMap { linkedContent =>
+                      Map(linkedContent.id -> List(tag))
+                    }
                   }
                   val links = linkedContent.toList map { case (contentId, tags) => Link(contentId, tags map (_.id))}
                   GraphNode(content.id, links)
