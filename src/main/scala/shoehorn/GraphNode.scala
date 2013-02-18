@@ -7,7 +7,7 @@ import blueeyes.json.JsonAST.JField
 
 case class GraphNode(id: String, links: List[Link])
 
-case class Link(id: String, tag: String)
+case class Link(id: String, tags: List[String])
 
 object GraphNode {
 
@@ -15,7 +15,10 @@ object GraphNode {
     def decompose(node: GraphNode): JValue = JObject(List(
       JField("id", JString(node.id)),
       JField("links", JArray(node.links map {
-        link => JObject(List(JField("id", JString(link.id)), JField("tag", JString(link.tag))))
+        link => JObject(List(
+          JField("id", JString(link.id)),
+          JField("tags", JArray(link.tags map (JString(_: String))))
+        ))
       }))
     ))
   }
