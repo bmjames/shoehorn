@@ -7,22 +7,14 @@ import blueeyes.BlueEyesServiceBuilder
 import blueeyes.core.data.{BijectionsChunkJson}
 import blueeyes.core.http.MimeTypes.{json, application}
 import blueeyes.core.http.HttpResponse
-import blueeyes.json.JsonAST._
-import blueeyes.json.xschema.Serialization._
-import blueeyes.json.xschema.Decomposer
+import blueeyes.json.JsonAST.JValue
+
+import blueeyes.json.xschema.SerializationImplicits._
 import blueeyes.json.xschema.DefaultDecomposers._
+import GraphNode._
 
 
 trait ShoehornService extends BlueEyesServiceBuilder with BijectionsChunkJson {
-
-  implicit val NodeDecomposer: Decomposer[GraphNode] = new Decomposer[GraphNode] {
-    def decompose(node: GraphNode): JValue = JObject(List(
-      JField("id", JString(node.id)),
-      JField("links", JArray(node.links map {
-        link => JObject(List(JField("id", JString(link.id)), JField("tag", JString(link.tag))))
-      }))
-    ))
-  }
 
   val shoehorn = service("shoehorn", "1.0.0") { requestLogging { context =>
     startup {
