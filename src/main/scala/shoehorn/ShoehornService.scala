@@ -2,29 +2,35 @@ package shoehorn
 
 import blueeyes.core.data.{BijectionsChunkString, BijectionsChunkJson}
 import blueeyes.BlueEyesServiceBuilder
-import akka.dispatch.{Promise, Future}
+import akka.dispatch.Future
 import blueeyes.core.http.MimeTypes.{text, plain, json, application}
 import blueeyes.core.http.HttpResponse
+
 
 trait ShoehornService extends BlueEyesServiceBuilder with BijectionsChunkString {
 
 
-  val shoehorn = service("shoehorn", "1.0.0") { context =>
+  val shoehorn = service("shoehorn", "1.0.0") { requestLogging { context =>
     startup {
-      Future(())
+      Future(new ContentApi(context.config[String]("contentApiUrl")))
     } ->
-      request { config: Unit =>
+      request { client: ContentApi =>
         produce(text/plain) {
           path("/") {
             get { _: Req =>
 
-              Future(HttpResponse[String](content = Some("hello, world!")))
+              val latestContent = client.latest(10)
+
+              latestContent map { contents =>
+                val bodyText = contents mkString "\n"
+                HttpResponse[String](content = Some(bodyText))
+              }
 
             }
           }
         }
       } ->
-      shutdown(_ => Future(()))
-  }
+      shutdown(_ => Future(println("Shutting down...")))
+  }}
 
 }
