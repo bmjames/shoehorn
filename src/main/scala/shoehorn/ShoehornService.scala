@@ -51,7 +51,7 @@ trait ShoehornService extends BlueEyesServiceBuilder {
   def buildGraph(contents: List[Content], ignoredTags: Set[Tag]): List[GraphNode] = {
     val tagToContent: Map[Tag, List[Content]] = contents foldMap { content =>
       content.tags foldMap (tag => Map(tag -> List(content)))
-    } filterKeys (tag => ! ignoredTags(tag))
+    } filterKeys ignorePrefixes(ignoredTags)
     contents map { content => toGraphNode(content, tagToContent) }
   }
 
@@ -67,5 +67,8 @@ trait ShoehornService extends BlueEyesServiceBuilder {
     }
     GraphNode(content.id, links, content.webTitle)
   }
+
+  def ignorePrefixes(ignoredTags: Set[Tag])(tag: Tag): Boolean =
+    ! ignoredTags.exists(tag.parts startsWith _.parts)
 
 }

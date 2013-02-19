@@ -60,4 +60,6 @@ object ContentApi {
 
 case class Content(id: String, webPubDate: DateTime, tags: List[Tag], webTitle: String)
 
-case class Tag(id: String)
+case class Tag(id: String) {
+  val parts = id.split('/')
+}
