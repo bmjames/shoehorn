@@ -61,7 +61,7 @@ trait ShoehornService extends BlueEyesServiceBuilder with BijectionsChunkJson {
       val length = math.max(1, 10 / tags.length)
       Link(contentId, tags map (_.id), length)
     }
-    GraphNode(content.id, links)
+    GraphNode(content.id, links, content.webTitle)
   }
 
 }
