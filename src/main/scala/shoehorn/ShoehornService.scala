@@ -7,7 +7,7 @@ import blueeyes.BlueEyesServiceBuilder
 import blueeyes.core.data.{BijectionsChunkJson}
 import blueeyes.core.http.MimeTypes.{json, application}
 import blueeyes.core.http.HttpResponse
-import blueeyes.json.JsonAST.JValue
+import blueeyes.json.JsonAST._
 
 import blueeyes.json.xschema.SerializationImplicits._
 import blueeyes.json.xschema.DefaultDecomposers._
@@ -31,7 +31,7 @@ trait ShoehornService extends BlueEyesServiceBuilder with BijectionsChunkJson {
                 latestContent <- client.latest(50)
                 nodes = buildGraph(latestContent, ignoredTags.orZero)
               } yield {
-                HttpResponse[JValue](content = Some(nodes.serialize))
+                HttpResponse[JValue](content = Some(wrapResponse(nodes)))
               }
 
             }
@@ -40,6 +40,9 @@ trait ShoehornService extends BlueEyesServiceBuilder with BijectionsChunkJson {
       } ->
       shutdown(_ => Future(println("Shutting down...")))
   }}
+
+  def wrapResponse(nodes: List[GraphNode]): JValue =
+    JObject(List(JField("nodes", nodes.serialize)))
 
   def buildGraph(contents: List[Content], ignoredTags: Set[Tag]): List[GraphNode] = {
     val tagToContent: Map[Tag, List[Content]] = contents foldMap { content =>
