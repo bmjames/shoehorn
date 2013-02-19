@@ -68,11 +68,7 @@ trait ShoehornService extends BlueEyesServiceBuilder {
   }
 
   def link(contentId: String, tags: List[Tag]): State[Int, Link] =
-    State { nodeWeightAcc =>
-      val length = math.max(1, 10 / tags.length)
-      val link = Link(contentId, tags map (_.id), length)
-      (nodeWeightAcc + tags.length) -> link
-    }
+    modify[Int](_ + tags.length) >| Link(contentId, tags map (_.id), math.max(1, 10 / tags.length))
 
   def noIgnoredPrefix(ignoredTags: Set[Tag])(tag: Tag): Boolean =
     ! ignoredTags.exists(tag.parts startsWith _.parts)
