@@ -42,8 +42,9 @@ object ContentApi {
       JString(webPubDate) <- json \? "webPublicationDate"
       JArray(tags) <- json \? "tags"
       JString(webTitle) <- json \? "webTitle"
+      JString(webUrl) <- json \? "webUrl"
     } yield {
-      Content(id, parseDateTime(webPubDate), tags flatMap parseTag, webTitle)
+      Content(id, parseDateTime(webPubDate), tags flatMap parseTag, webTitle, webUrl)
     }
 
   def parseTag(json: JValue): Option[Tag] =
@@ -58,7 +59,7 @@ object ContentApi {
 }
 
 
-case class Content(id: String, webPubDate: DateTime, tags: List[Tag], webTitle: String)
+case class Content(id: String, webPubDate: DateTime, tags: List[Tag], webTitle: String, webUrl: String)
 
 case class Tag(id: String) {
   val parts = id.split('/')

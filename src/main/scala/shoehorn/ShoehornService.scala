@@ -64,7 +64,7 @@ trait ShoehornService extends BlueEyesServiceBuilder {
       }
     }
     val (weight, links) = linkedContent.toList.runTraverseS(0)(link _ tupled)
-    GraphNode(content.id, weight, links, content.webTitle)
+    GraphNode(content.id, weight, links, content.webTitle, content.webUrl)
   }
 
   def link(contentId: String, tags: List[Tag]): State[Int, Link] =
