@@ -53,7 +53,7 @@ trait ShoehornService extends BlueEyesServiceBuilder {
     val tagToContent: Map[Tag, List[Content]] = contents foldMap { content =>
       content.tags foldMap (tag => Map(tag -> List(content)))
     } filterKeys noIgnoredPrefix(ignoredTags) filterKeys (key => ! (ignoreSectionTags && isSectionTag(key)))
-    contents map { content => toGraphNode(content, tagToContent) }
+    contents map { content => toGraphNode(content, tagToContent) } filter (_.links.nonEmpty)
   }
 
   def toGraphNode(content: Content, tagToContent: Map[Tag, List[Content]]): GraphNode = {
