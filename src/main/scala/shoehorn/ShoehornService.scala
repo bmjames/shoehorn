@@ -30,10 +30,11 @@ trait ShoehornService extends BlueEyesServiceBuilder {
           jsonp[ByteChunk] { req: HttpRequest[Future[JValue]] =>
 
             val ignoredTags = req.parameters.get('ignore) map (_.split(',').toSet.map(Tag.apply))
+            val ignoreSectionTags = req.parameters.contains(Symbol("ignore-section-tags"))
 
             for {
               latestContent <- client.latest(50)
-              nodes = buildGraph(latestContent, ignoredTags.orZero)
+              nodes = buildGraph(latestContent, ignoredTags.orZero, ignoreSectionTags)
             } yield {
               HttpResponse[JValue](content = Some(wrapResponse(nodes)))
             }
@@ -48,10 +49,10 @@ trait ShoehornService extends BlueEyesServiceBuilder {
   def wrapResponse(nodes: List[GraphNode]): JValue =
     JObject(List(JField("nodes", nodes.serialize)))
 
-  def buildGraph(contents: List[Content], ignoredTags: Set[Tag]): List[GraphNode] = {
+  def buildGraph(contents: List[Content], ignoredTags: Set[Tag], ignoreSectionTags: Boolean): List[GraphNode] = {
     val tagToContent: Map[Tag, List[Content]] = contents foldMap { content =>
       content.tags foldMap (tag => Map(tag -> List(content)))
-    } filterKeys ignorePrefixes(ignoredTags)
+    } filterKeys noIgnoredPrefix(ignoredTags) filterKeys (key => ! (ignoreSectionTags && isSectionTag(key)))
     contents map { content => toGraphNode(content, tagToContent) }
   }
 
@@ -68,7 +69,11 @@ trait ShoehornService extends BlueEyesServiceBuilder {
     GraphNode(content.id, links, content.webTitle)
   }
 
-  def ignorePrefixes(ignoredTags: Set[Tag])(tag: Tag): Boolean =
+  def noIgnoredPrefix(ignoredTags: Set[Tag])(tag: Tag): Boolean =
     ! ignoredTags.exists(tag.parts startsWith _.parts)
 
+  def isSectionTag(tag: Tag): Boolean =
+    PartialFunction.cond(tag.parts) {
+      case Array(p1, p2) => p1 == p2
+    }
 }
