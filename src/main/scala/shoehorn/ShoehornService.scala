@@ -4,41 +4,45 @@ import akka.dispatch.Future
 import scalaz.Scalaz._
 
 import blueeyes.BlueEyesServiceBuilder
-import blueeyes.core.data.{BijectionsChunkJson}
+import blueeyes.core.data.{BijectionsChunkString, BijectionsChunkFutureJson, BijectionsChunkJson, ByteChunk}
 import blueeyes.core.http.MimeTypes.{json, application}
-import blueeyes.core.http.HttpResponse
+import blueeyes.core.http.{HttpRequest, HttpResponse}
 import blueeyes.json.JsonAST._
-
 import blueeyes.json.xschema.SerializationImplicits._
 import blueeyes.json.xschema.DefaultDecomposers._
+
 import GraphNode._
 
 
-trait ShoehornService extends BlueEyesServiceBuilder with BijectionsChunkJson {
+trait ShoehornService extends BlueEyesServiceBuilder {
+
+  import BijectionsChunkString._
+  import BijectionsChunkJson._
+  import BijectionsChunkFutureJson._
 
   val shoehorn = service("shoehorn", "1.0.0") { requestLogging { context =>
     startup {
       Future(new ContentApi(context.config[String]("contentApiUrl")))
     } ->
-      request { client: ContentApi =>
-        produce(application/json) {
-          path("/") {
-            get { req: Req =>
+    request { client: ContentApi =>
+      produce(application/json) {
+        path("/") {
+          jsonp[ByteChunk] { req: HttpRequest[Future[JValue]] =>
 
-              val ignoredTags = req.parameters.get('ignore) map (_.split(',').toSet.map(Tag.apply))
+            val ignoredTags = req.parameters.get('ignore) map (_.split(',').toSet.map(Tag.apply))
 
-              for {
-                latestContent <- client.latest(50)
-                nodes = buildGraph(latestContent, ignoredTags.orZero)
-              } yield {
-                HttpResponse[JValue](content = Some(wrapResponse(nodes)))
-              }
-
+            for {
+              latestContent <- client.latest(50)
+              nodes = buildGraph(latestContent, ignoredTags.orZero)
+            } yield {
+              HttpResponse[JValue](content = Some(wrapResponse(nodes)))
             }
+
           }
         }
-      } ->
-      shutdown(_ => Future(println("Shutting down...")))
+      }
+    } ->
+    shutdown(_ => Future(println("Shutting down...")))
   }}
 
   def wrapResponse(nodes: List[GraphNode]): JValue =
